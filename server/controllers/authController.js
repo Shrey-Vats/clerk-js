@@ -59,7 +59,7 @@ export const Login = async (req, res) => {
           email: email,
           role: user.role,
         });
-        
+
         res.cookie("token", token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -88,6 +88,33 @@ export const Logout = async (req, res) => {
         });
     }
     catch (error) {
+        return res.status(500).json({
+          message: "Something went wrong, Try again",
+        });
+    }
+}
+
+export const tokenverify = async (req, res)=> {
+    try {
+        const token = req.query.token
+
+        const user = await verifyToken(token, "emailVerify");
+    
+        if (!user) {
+          return res.status(400).json({
+            message: "Token is not valid, Try again",
+            success: false,
+          });
+        }
+    
+        user.emailVerified = true;
+        await user.save();
+    
+        return res.status(200).json({
+          message: "Token is valid, You can now login",
+          success: true,
+        });
+    } catch (error) {
         return res.status(500).json({
           message: "Something went wrong, Try again",
         });
