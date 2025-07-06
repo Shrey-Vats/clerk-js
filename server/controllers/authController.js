@@ -30,3 +30,52 @@ export const Signup = async (req, res) => {
     })
    }
 }
+
+export const Login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+          return res.status(400).json({
+            message: "User no longer exit, Signup first",
+            success: false,
+          });
+        }
+
+        const isMatch = bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+          return res.status(400).json({
+            message: "Invalid Password, Try again",
+            success: false,
+          });
+        }
+
+        const token = jwt.sign(
+          {
+            userId: user._id,
+            email: email,
+            role: user.role,
+          },
+          process.env.JWT_SECERT
+        );
+
+        res.cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "Strict",
+          maxAge: 24 * 60 * 60 * 1000 * 29,
+        });
+
+        return res.status(200).json({
+          message: "Login successfuly",
+          success: true,
+        });
+    } catch (error) {
+        return res.status(500).json({
+          message: "Something went wrong, Try again",
+        });
+    }
+}
