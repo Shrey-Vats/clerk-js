@@ -44,3 +44,17 @@ export const verifyToken = async (token, type) =>{
     return null
    }
 }
+
+export const clearToken = async (userId) => {
+  try {
+    await User.findByIdAndUpdate(userId, {
+        $unset: {
+            verifyToken: '',
+            verifyTokenExpiry: '',
+            verifyType: ''
+        }
+    })
+  } catch (error) {
+    console.log(error);
+  }
+}
