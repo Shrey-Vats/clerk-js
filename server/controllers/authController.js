@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import User from '../models/user.js'
+import { signAccessToken } from '../services/jwtService.js';
 
 export const Signup = async (req, res) => {
    try {
@@ -53,15 +54,12 @@ export const Login = async (req, res) => {
           });
         }
 
-        const token = jwt.sign(
-          {
-            userId: user._id,
-            email: email,
-            role: user.role,
-          },
-          process.env.JWT_SECERT
-        );
-
+        const token = signAccessToken({
+          userId: user._id,
+          email: email,
+          role: user.role,
+        });
+        
         res.cookie("token", token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",

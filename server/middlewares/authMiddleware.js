@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import User from '../models/user';
+import { verifyAccessToken } from '../services/jwtService';
 
 export const authMiddleware = async (req, res, next) => {
    try {
@@ -12,7 +13,7 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    const Decoeded = jwt.verify(token, process.env.JWT_SECERT);
+    const Decoeded = verifyAccessToken(token);
 
     const user = await User.findById(Decoeded.userId);
 
