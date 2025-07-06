@@ -109,6 +109,8 @@ export const tokenverify = async (req, res)=> {
     
         user.emailVerified = true;
         await user.save();
+        
+        await clearToken(user._id);
     
         return res.status(200).json({
           message: "Token is valid, You can now login",

@@ -5,8 +5,8 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, require: true },
   role: {
     type: String,
-    enum: ["admin", "user", "unVerified"],
-    default: "unVerified",
+    enum: ["admin", "user"],
+    default: "user",
   },
   verifyToken: { type: String },
   verifyTokenExpiry: { type: Date },
@@ -14,6 +14,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ["emailVerify", "resetPassword"],
   },
+  emailVerified: {type: Boolean, default: false},
 });
 
 const User = mongoose.model('auth', UserSchema)
