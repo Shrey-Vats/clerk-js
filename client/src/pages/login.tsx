@@ -39,7 +39,20 @@ export function LoginPage() {
   }
   
   const onSubmit = async (values: LoginInput) => {
-   
+    try {
+      console.log("Login data:", values);
+      const response = await axios.post(
+        "http://localhost:5000/api/login",
+        values
+      );
+      console.log(response)
+      
+    } catch (error: any) {
+      console.log(
+        "🚨 Request failed (network/server error):",
+        error.message || error
+      );
+    }
   };
 
   return (
