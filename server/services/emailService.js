@@ -1,17 +1,17 @@
 import nodemailer from "nodemailer"
 
 const transporter = nodemailer.createTransport({
-  host: process.env.MAILTRAP_HOST,
-  port: process.env.MAILTRAP_PORT,
+  host: "sandbox.smtp.mailtrap.io",
+  port: 2525,
   secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.MAILTRAP_USERNAME,
-    pass: process.env.MAILTRAP_PASSWORD,
+    user: "557d3b7b64b14e",
+    pass: "f2dc99d1e54b2e",
   },
 });
 
 export async function sendEmail({to, subject, html}) {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"Your App" <${process.env.MAILTRAP_USERNAME}>`,
       to,
       subject,
