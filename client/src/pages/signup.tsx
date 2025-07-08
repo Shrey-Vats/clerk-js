@@ -39,7 +39,21 @@ export function SignupPage() {
   });
 
   const onSumbit = async (values: SignupInput) => {
-   
+    try {
+      console.log(values);
+      const response = await axios.post(
+        "http://localhost:5000/api/signup",
+        values
+      );
+
+      if (!response.data.success) {
+        console.log("error ", response.data.success);
+      }
+
+      console.log(response.data.message);
+    } catch (error) {
+      console.log("threr a error", error);
+    }
   };
 
   return (
