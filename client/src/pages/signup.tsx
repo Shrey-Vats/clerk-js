@@ -13,23 +13,26 @@ import {
 } from "@/components/ui/form";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useState } from "react";
+import { toast } from "sonner"; // ✅ using Sonner!
 
 function handleSocialSignup(provider: "google" | "github") {
-  // Replace with actual OAuth signup logic
   window.location.href = `/auth/${provider}`;
 }
+
 const signupSchema = z.object({
-  email: z.string().email({
-    message: "Invalid Email",
-  }),
+  email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type SignupInput = z.infer<typeof signupSchema>
+type SignupInput = z.infer<typeof signupSchema>;
 
 export function SignupPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -38,34 +41,48 @@ export function SignupPage() {
     },
   });
 
-  const onSumbit = async (values: SignupInput) => {
+  const onSubmit = async (values: SignupInput) => {
+    setLoading(true);
     try {
-      console.log(values);
       const response = await axios.post(
         "http://localhost:5000/api/signup",
         values
       );
 
       if (!response.data.success) {
-        console.log("error ", response.data.success);
+        toast.error(response.data.message || "Signup failed. Try again.");
+
+        if (response.data.field === "email") {
+          form.setError("email", {
+            type: "server",
+            message: response.data.message,
+          });
+        }
+
+        return;
       }
 
-      console.log(response.data.message);
-    } catch (error) {
-      console.log("threr a error", error);
+      toast.success("Signup successful! OTP sent to your email.");
+      navigate("/otp-sent");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Network error. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted">
+    <div className="flex items-center justify-center min-h-screen bg-muted px-4">
       <div className="w-full max-w-md p-8 bg-white dark:bg-zinc-900 rounded-xl shadow-xl">
         <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
 
-        {/* Social Signup Buttons */}
+        {/* Social Buttons */}
         <div className="space-y-2 mb-6">
           <Button
             variant="outline"
-            className="w-full flex items-center gap-2 justify-center"
+            className="w-full flex items-center gap-2 justify-center shadow-sm hover:shadow-md transition-all"
             onClick={() => handleSocialSignup("google")}
           >
             <FcGoogle size={20} />
@@ -73,7 +90,7 @@ export function SignupPage() {
           </Button>
           <Button
             variant="outline"
-            className="w-full flex items-center gap-2 justify-center"
+            className="w-full flex items-center gap-2 justify-center shadow-sm hover:shadow-md transition-all"
             onClick={() => handleSocialSignup("github")}
           >
             <FaGithub size={20} />
@@ -88,9 +105,9 @@ export function SignupPage() {
           <div className="flex-grow h-px bg-border" />
         </div>
 
-        {/* Email & Password Form */}
+        {/* Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSumbit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -102,12 +119,14 @@ export function SignupPage() {
                       type="email"
                       placeholder="you@example.com"
                       {...field}
+                      className="transition-all focus-visible:ring-2 ring-offset-2"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="password"
@@ -115,20 +134,29 @@ export function SignupPage() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      className="transition-all focus-visible:ring-2 ring-offset-2"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button className="w-full" type="submit">
-              Sign Up
+            <Button
+              type="submit"
+              className="w-full transition-all duration-200"
+              disabled={loading}
+            >
+              {loading ? "Signing Up..." : "Sign Up"}
             </Button>
           </form>
         </Form>
 
-        {/* Already have account link */}
+        {/* Link to Login */}
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link to="/login" className="text-primary hover:underline">

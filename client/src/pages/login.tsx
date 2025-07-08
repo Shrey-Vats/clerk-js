@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,20 +12,23 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { FcGoogle } from "react-icons/fc"; // Google icon (colored)
-import { FaGithub } from "react-icons/fa"; // GitHub icon
-import { Link } from "react-router-dom";
-import axios from 'axios'
+import { FcGoogle } from "react-icons/fc";
+import { FaGithub } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type LoginInput = z.infer<typeof loginSchema>;
 
-
 export function LoginPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -34,29 +38,45 @@ export function LoginPage() {
   });
 
   function handleSocialLogin(provider: "google" | "github") {
-    // Rdjdjdjdjdjdjdjdjdjdjdjdjdjdj
     window.location.href = `/auth/${provider}`;
   }
-  
+
   const onSubmit = async (values: LoginInput) => {
+    setLoading(true);
     try {
-      console.log("Login data:", values);
       const response = await axios.post(
         "http://localhost:5000/api/login",
         values
       );
-      console.log(response)
-      
-    } catch (error) {
-      console.log(
-        "🚨 Request failed (network/server error):",
-         error
+
+      if (!response.data.success) {
+        toast.error(response.data.message || "Login failed. Please try again.");
+
+        // Example: if server returns field error for email
+        if (response.data.field === "email") {
+          form.setError("email", {
+            type: "server",
+            message: response.data.message,
+          });
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Login successful!");
+      navigate("/dashboard"); // change to your actual post-login route
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Network error. Please try again."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted">
+    <div className="flex items-center justify-center min-h-screen bg-muted px-4">
       <div className="w-full max-w-md p-8 bg-white dark:bg-zinc-900 rounded-xl shadow-xl">
         <h2 className="text-2xl font-bold mb-6 text-center">Login / Signup</h2>
 
@@ -64,7 +84,7 @@ export function LoginPage() {
         <div className="space-y-2 mb-6">
           <Button
             variant="outline"
-            className="w-full flex items-center gap-2 justify-center"
+            className="w-full flex items-center gap-2 justify-center shadow-sm hover:shadow-md transition-all"
             onClick={() => handleSocialLogin("google")}
           >
             <FcGoogle size={20} />
@@ -72,7 +92,7 @@ export function LoginPage() {
           </Button>
           <Button
             variant="outline"
-            className="w-full flex items-center gap-2 justify-center"
+            className="w-full flex items-center gap-2 justify-center shadow-sm hover:shadow-md transition-all"
             onClick={() => handleSocialLogin("github")}
           >
             <FaGithub size={20} />
@@ -101,6 +121,7 @@ export function LoginPage() {
                       type="email"
                       placeholder="you@example.com"
                       {...field}
+                      className="transition-all focus-visible:ring-2 ring-offset-2"
                     />
                   </FormControl>
                   <FormMessage />
@@ -114,14 +135,24 @@ export function LoginPage() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      className="transition-all focus-visible:ring-2 ring-offset-2"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button className="w-full" type="submit">
-              Login with Email
+
+            <Button
+              className="w-full transition-all duration-200"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Logging in..." : "Login with Email"}
             </Button>
           </form>
         </Form>

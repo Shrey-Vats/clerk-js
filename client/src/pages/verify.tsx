@@ -1,47 +1,66 @@
-
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-export default function VerifyEmailPage() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
-  const [message, setMessage] = useState("Verifying your email...");
 
+type Status = "loading" | "success" | "error";
+
+export default function VerifyEmailPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const [token, setToken] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>("loading");
+  const [message, setMessage] = useState("Verifying your email...");
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // ✅ Get token from URL once when ready
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (!token) {
+    const tokenParam = searchParams.get("token");
+    if (tokenParam) {
+      setToken(tokenParam);
+    } else {
       setStatus("error");
       setMessage("Invalid or missing verification token.");
-      return;
     }
+  }, [searchParams]);
+
+  // ✅ Trigger email verification when token is available
+  useEffect(() => {
+    if (!token) return;
 
     const verifyEmail = async () => {
+      setStatus("loading");
+      setMessage("Verifying your email...");
+
       try {
         const res = await axios.get(
           `http://localhost:5000/api/tokenverify?token=${token}`
         );
+
         if (res.data.success) {
           setStatus("success");
-          setMessage("✅ Your email has been successfully verified.");
-          navigate("/login")
+          setMessage("Your email has been successfully verified.");
+          setTimeout(() => {
+            navigate("/login")
+          }, 2000);
         } else {
           throw new Error(res.data.message || "Verification failed.");
         }
       } catch (err: any) {
         setStatus("error");
-        setMessage(err.response?.data?.message || "Something went wrong.");
+        setMessage(
+          err.response?.data?.message || err.message || "Something went wrong."
+        );
+      } finally {
+        setIsRetrying(false);
       }
     };
 
     verifyEmail();
-  }, []);
+  }, [token]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted px-4">
@@ -61,9 +80,7 @@ export default function VerifyEmailPage() {
                 Email Verified
               </h2>
               <p className="text-muted-foreground">{message}</p>
-              <Button onClick={() => (window.location.href = "/login")}>
-                Go to Login
-              </Button>
+              <Button onClick={() => navigate("/login")}>Go to Login</Button>
             </>
           )}
 
@@ -74,9 +91,23 @@ export default function VerifyEmailPage() {
                 Verification Failed
               </h2>
               <p className="text-muted-foreground">{message}</p>
+              {token && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsRetrying(true);
+                    setStatus("loading");
+                    setMessage("Retrying verification...");
+                  }}
+                  disabled={isRetrying}
+                >
+                  {isRetrying ? "Retrying..." : "Retry Verification"}
+                </Button>
+              )}
               <Button
-                variant="secondary"
-                onClick={() => (window.location.href = "/resend-verification")}
+                variant="outline"
+                onClick={() => navigate("/resend-verification")}
+                className="mt-2"
               >
                 Resend Verification Email
               </Button>
