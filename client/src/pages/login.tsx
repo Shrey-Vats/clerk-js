@@ -47,10 +47,10 @@ export function LoginPage() {
       );
       console.log(response)
       
-    } catch (error: any) {
+    } catch (error) {
       console.log(
         "🚨 Request failed (network/server error):",
-        error.message || error
+         error
       );
     }
   };
